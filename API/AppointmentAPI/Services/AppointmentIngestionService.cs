@@ -51,17 +51,18 @@ namespace AppointmentAPI.Services
             if (appointment == null)
             {
                 Console.WriteLine($"Error - appointment not ingested due to {errors.Count} validation failures:");
-                foreach (var error in errors) { 
-                    Console.WriteLine(error);
-                }
-                return new AppointmentIngestionResult
-                {
-                    SuccessfulIngestion = false,
-                    ErrorMessages = errors
-                };
+                return ReportErrors(errors);
             }
             else
             {
+                var exisitingAppointments = await _repository.GetAllAppointmentsAsync();
+                if (!CheckForAppointmentOverlaps(appointment, exisitingAppointments, out errors))
+                {
+                    Console.WriteLine($"Error - appointment not ingested due to appointment overlap");
+                    return ReportErrors(errors);
+                }
+
+
                 await _repository.SaveAsync(appointment);
                 return new AppointmentIngestionResult
                 {
@@ -69,6 +70,19 @@ namespace AppointmentAPI.Services
                     AppointmentId = appointment.Id,
                 };
             }
+        }
+
+        private static AppointmentIngestionResult ReportErrors(List<string> errors)
+        {
+            foreach (var error in errors)
+            {
+                Console.WriteLine(error);
+            }
+            return new AppointmentIngestionResult
+            {
+                SuccessfulIngestion = false,
+                ErrorMessages = errors
+            };
         }
 
         private static Appointment? ValidateAppointment(AppointmentDTO appointment, out List<string> errors)
@@ -101,6 +115,22 @@ namespace AppointmentAPI.Services
                 ServiceDurationMinutes = appointment.ServiceDurationMinutes.Value,
                 ClientName = appointment.ClientName
             };
+        }
+
+        private static bool CheckForAppointmentOverlaps(Appointment appointment, List<Appointment> existingAppointments, out List<string> errors)
+        {
+            errors = new List<string>();
+            var appointmentEnd = appointment.AppointmentTime + TimeSpan.FromMinutes(appointment.ServiceDurationMinutes);
+            foreach (var existingAppointment in existingAppointments)
+            {
+                var existingEnd = existingAppointment.AppointmentTime + TimeSpan.FromMinutes(appointment.ServiceDurationMinutes);
+                if(existingAppointment.AppointmentTime < appointmentEnd && appointment.AppointmentTime < existingEnd)
+                {
+                    errors.Add($"Overlapping appointment Id: {existingAppointment.Id}");
+                    return false;
+                }
+            }
+            return true;
         }
 
         //Remove trailing whitespace and validate for control characters

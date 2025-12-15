@@ -23,5 +23,10 @@ namespace AppointmentAPI.Repositories
             _appointments.TryAdd(appointment.Id, appointment);
             return Task.FromResult(appointment.Id);
         }
+
+        public Task<List<Appointment>> GetAllAppointmentsAsync()
+        {
+            return Task.FromResult(_appointments.Values.ToList());
+        }
     }
 }
