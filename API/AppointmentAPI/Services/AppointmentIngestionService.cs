@@ -1,16 +1,20 @@
 ﻿using AppointmentAPI.DTOs;
 using AppointmentAPI.Models;
+using AppointmentAPI.Properties;
 using AppointmentAPI.Repositories;
+using Microsoft.Extensions.Options;
 
 namespace AppointmentAPI.Services
 {
     internal class AppointmentIngestionService : IAppointmentIngestionService
     {
         private IAppointmentRepository _repository;
+        private readonly AppointmentIngestionOptions _options;
 
-        public AppointmentIngestionService(IAppointmentRepository repository)
+        public AppointmentIngestionService(IAppointmentRepository repository, IOptions<AppointmentIngestionOptions> options)
         {
             _repository = repository;
+            _options = options.Value;
         }
 
         public async Task<AppointmentDTO?> GetAppointmentFromId(Guid id)
@@ -38,7 +42,7 @@ namespace AppointmentAPI.Services
             if (ValidateClientName(ref clientName))
             {
                 appointmentDTO.ClientName = clientName;
-                appointment = ValidateAppointment(appointmentDTO, out errors);
+                appointment = ValidateAppointment(appointmentDTO, out errors, _options.FutureAppointmentTimeThresholdMinutes, _options.DefaultServiceDurationMinutes);
             }
             else
             {
@@ -85,11 +89,11 @@ namespace AppointmentAPI.Services
             };
         }
 
-        private static Appointment? ValidateAppointment(AppointmentDTO appointment, out List<string> errors)
+        private static Appointment? ValidateAppointment(AppointmentDTO appointment, out List<string> errors, int futureThreshold, int defaultServiceDuration)
         {
             errors = new List<string>();
             var utcAppointmentTime = appointment.AppointmentTime!.Value.UtcDateTime;
-            if (utcAppointmentTime < DateTime.UtcNow + TimeSpan.FromMinutes(5))
+            if (utcAppointmentTime < DateTime.UtcNow + TimeSpan.FromMinutes(futureThreshold))
             {
                 errors.Add("Appointment time must be in the future.");
             }
@@ -105,7 +109,7 @@ namespace AppointmentAPI.Services
 
             if(appointment.ServiceDurationMinutes == null || appointment.ServiceDurationMinutes == 0)
             {
-                appointment.ServiceDurationMinutes = 30;
+                appointment.ServiceDurationMinutes = defaultServiceDuration;
             }
 
             return new Appointment

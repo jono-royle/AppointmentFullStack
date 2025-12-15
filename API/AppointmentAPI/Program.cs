@@ -5,6 +5,7 @@ using Microsoft.OpenApi.Models;
 using System;
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
+using AppointmentAPI.Properties;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,6 +33,16 @@ builder.Services.AddScoped<IAppointmentIngestionService, AppointmentIngestionSer
 
 builder.Services.AddDbContext<AppointmentDbContext>(options => options.UseInMemoryDatabase("AppointmentsDb"));
 builder.Services.AddScoped<IAppointmentRepository, EfCoreAppointmentRepository>();
+builder.Services.Configure<AppointmentIngestionOptions>(builder.Configuration.GetSection("AppointmentIngestion"));
+builder.Services
+    .AddOptions<AppointmentIngestionOptions>()
+    .Bind(builder.Configuration.GetSection("AppointmentIngestion"))
+    .ValidateDataAnnotations()
+    .Validate(
+        o => o.FutureAppointmentTimeThresholdMinutes >= 0,
+        "Future appointment time threshold must be greater than or equal to zero")
+    .Validate(o => o.DefaultServiceDurationMinutes > 0,
+    "Default service duration must be greater than 0");
 
 var app = builder.Build();
 
