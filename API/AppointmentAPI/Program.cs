@@ -1,7 +1,10 @@
+using AppointmentAPI.Data;
 using AppointmentAPI.Repositories;
 using AppointmentAPI.Services;
 using Microsoft.OpenApi.Models;
+using System;
 using System.Reflection;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,7 +26,12 @@ builder.Services.AddSwaggerGen(options =>
     options.IncludeXmlComments(xmlPath);
 });
 builder.Services.AddScoped<IAppointmentIngestionService, AppointmentIngestionService>();
-builder.Services.AddSingleton<IAppointmentRepository, DictionaryAppointmentRepository>();
+
+//Uncomment this line and comment out the two lines below to switch to an in memory dictionary
+//builder.Services.AddSingleton<IAppointmentRepository, DictionaryAppointmentRepository>();
+
+builder.Services.AddDbContext<AppointmentDbContext>(options => options.UseInMemoryDatabase("AppointmentsDb"));
+builder.Services.AddScoped<IAppointmentRepository, EfCoreAppointmentRepository>();
 
 var app = builder.Build();
 
