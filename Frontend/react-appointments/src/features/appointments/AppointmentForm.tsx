@@ -12,26 +12,76 @@ export const AppointmentForm = ({ onSubmit }: Props) => {
   const [serviceDurationMinutes, setServiceDurationMinutes] =
     useState<number | undefined>(undefined);
 
+  const [errors, setErrors] = useState<string[]>([]);
+
+const validate = (): boolean => {
+  const errs: string[] = [];
+
+  // Client name validation
+  if (clientName.trim().length < 1) {
+    errs.push("Client name must be at least 1 character.");
+  }
+  if (clientName.trim().length > 100) {
+    errs.push("Client name cannot exceed 100 characters.");
+  }
+
+  // Appointment time validation
+  if (appointmentTime) {
+    const date = new Date(appointmentTime);
+    const now = new Date();
+
+    const minutes = date.getMinutes();
+    if (minutes !== 0 && minutes !== 30) {
+      errs.push("Appointment time must be on the hour or half hour.");
+    }
+
+    // At least 5 minutes in the future
+    const minDate = new Date(now.getTime() + 5 * 60 * 1000);
+    if (date < minDate) {
+      errs.push("Appointment time must be at least 5 minutes in the future.");
+    }
+  } else {
+    errs.push("Appointment time is required.");
+  }
+
+  setErrors(errs);
+  return errs.length === 0;
+};
+
+
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
+    if (!validate()) return;
+
     onSubmit({
-      clientName,
+      clientName: clientName.trim(),
       appointmentTime: new Date(appointmentTime).toISOString(),
       serviceDurationMinutes,
     });
+
+    // Reset form
     setClientName("");
     setAppointmentTime("");
     setServiceDurationMinutes(undefined);
+    setErrors([]);
   };
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="max-w-md mx-auto p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md space-y-4"
+      className="max-w-md mx-auto my-8 p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md space-y-4"
     >
       <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-200">
         Create Appointment
       </h2>
+
+      {errors.length > 0 && (
+        <div className="text-red-600 dark:text-red-400 space-y-1">
+          {errors.map((err, idx) => (
+            <p key={idx}>{err}</p>
+          ))}
+        </div>
+      )}
 
       <div className="flex flex-col">
         <label className="mb-1 text-gray-600 dark:text-gray-300">Client Name</label>
@@ -56,7 +106,9 @@ export const AppointmentForm = ({ onSubmit }: Props) => {
       </div>
 
       <div className="flex flex-col">
-        <label className="mb-1 text-gray-600 dark:text-gray-300">Service Duration (minutes)</label>
+        <label className="mb-1 text-gray-600 dark:text-gray-300">
+          Service Duration (minutes)
+        </label>
         <input
           type="number"
           value={serviceDurationMinutes ?? ""}
