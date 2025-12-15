@@ -21,7 +21,7 @@ namespace AppointmentAPI.DTOs
         /// The scheduled appointment time with timezone information.
         /// </summary>
         [Required]
-        public required DateTimeOffset AppointmentTime { get; set; }
+        public required DateTimeOffset? AppointmentTime { get; set; }
 
         /// <summary>
         /// Duration of the service in minutes (optional).
