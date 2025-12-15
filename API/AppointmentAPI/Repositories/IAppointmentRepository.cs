@@ -6,6 +6,8 @@ namespace AppointmentAPI.Repositories
     {
         Task<Appointment?> GetByIdAsync(Guid id);
 
+        Task<List<Appointment>> GetAllAppointmentsAsync();
+
         Task<Guid> SaveAsync(Appointment appointment);
     }
 }
