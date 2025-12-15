@@ -1,6 +1,4 @@
 ﻿using AppointmentAPI.DTOs;
-using AppointmentAPI.Models;
-
 namespace AppointmentAPI.Services
 {
     public interface IAppointmentIngestionService

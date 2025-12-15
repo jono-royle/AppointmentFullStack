@@ -69,7 +69,6 @@ namespace AppointmentAPI.Services
                     return ReportErrors(errors);
                 }
 
-
                 await _repository.SaveAsync(appointment);
                 return new AppointmentIngestionResult
                 {
