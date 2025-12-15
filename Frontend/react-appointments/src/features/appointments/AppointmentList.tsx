@@ -23,7 +23,9 @@ export const AppointmentList = ({ appointments }: Props) => {
             <span className="font-semibold">Client:</span> {appt.clientName}
           </p>
           <p className="text-gray-700 dark:text-gray-200">
-            <span className="font-semibold">Time:</span> {new Date(appt.appointmentTime).toLocaleString()}
+            <span className="font-semibold">Time:</span> 
+            {new Date(appt.appointmentTime).toLocaleDateString()}{", "}
+            {new Date(appt.appointmentTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </p>
           {appt.serviceDurationMinutes !== undefined && (
             <p className="text-gray-700 dark:text-gray-200">
