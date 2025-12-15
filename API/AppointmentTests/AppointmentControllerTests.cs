@@ -1,11 +1,13 @@
 ﻿using AppointmentAPI.Controllers;
 using AppointmentAPI.DTOs;
 using AppointmentAPI.Models;
+using AppointmentAPI.Properties;
 using AppointmentAPI.Repositories;
 using AppointmentAPI.Responses;
 using AppointmentAPI.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Moq;
 using System.ComponentModel.DataAnnotations;
 
@@ -17,6 +19,9 @@ namespace AppointmentTests
         private AppointmentController _controller;
         private Mock<IAppointmentRepository> _repository;
         private static Guid _testAppointment1Id = Guid.NewGuid();
+
+        private static int _defaultServiceDuration = 30;
+        private static int _futureAppointmentThreshold = 5;
 
         private Appointment _testAppointment1 = new Appointment {
             Id = _testAppointment1Id,
@@ -30,7 +35,12 @@ namespace AppointmentTests
         {
             _repository = new Mock<IAppointmentRepository>();
             _repository.Setup(r => r.GetByIdAsync(_testAppointment1Id)).ReturnsAsync(_testAppointment1);
-            var ingestionService = new AppointmentIngestionService(_repository.Object);
+            var options = Options.Create(new AppointmentIngestionOptions
+            {
+                DefaultServiceDurationMinutes = _defaultServiceDuration,
+                FutureAppointmentTimeThresholdMinutes = _futureAppointmentThreshold
+            });
+            var ingestionService = new AppointmentIngestionService(_repository.Object, options);
             _controller = new AppointmentController(ingestionService);
         }
 
@@ -96,7 +106,7 @@ namespace AppointmentTests
         }
 
         [TestMethod]
-        public async Task IngestAppointment_StartsLessThanFiveMinutesInFuture_ReturnsError()
+        public async Task IngestAppointment_StartsLessThanFutureThresholdInFuture_ReturnsError()
         {
             _repository.Setup(r => r.GetAllAppointmentsAsync())
                 .ReturnsAsync(new List<Appointment>());
@@ -104,7 +114,7 @@ namespace AppointmentTests
             var dto = new AppointmentDTO
             {
                 AppointmentTime = new DateTime(currentDate.Year, currentDate.Month, currentDate.Day, currentDate.Hour, 0, 0,
-                    DateTimeKind.Utc) + TimeSpan.FromMinutes(3),
+                    DateTimeKind.Utc) + TimeSpan.FromMinutes(_futureAppointmentThreshold - 1),
                 ClientName = "SoonClient"
             };
 
@@ -197,7 +207,7 @@ namespace AppointmentTests
         }
 
         [TestMethod]
-        public async Task IngestAppointment_NoServiceDuration_SetsDefaultTo30()
+        public async Task IngestAppointment_NoServiceDuration_SetsDefault()
         {
             Appointment? savedAppointment = null;
 
@@ -227,7 +237,7 @@ namespace AppointmentTests
 
             Assert.IsNotNull(savedAppointment);
 
-            Assert.AreEqual(30, savedAppointment!.ServiceDurationMinutes);
+            Assert.AreEqual(_defaultServiceDuration, savedAppointment!.ServiceDurationMinutes);
         }
 
         [TestMethod]
