@@ -1,6 +1,6 @@
 ﻿namespace AppointmentAPI.Models
 {
-    public class Appointment
+    internal class Appointment
     {
         public Guid Id { get; set; }
 

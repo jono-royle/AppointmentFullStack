@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 
 namespace AppointmentAPI.Repositories
 {
-    public class DictionaryAppointmentRepository : IAppointmentRepository
+    internal class DictionaryAppointmentRepository : IAppointmentRepository
     {
         private ConcurrentDictionary<Guid, Appointment> _appointments;
 

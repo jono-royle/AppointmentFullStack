@@ -2,7 +2,7 @@
 
 namespace AppointmentAPI.Repositories
 {
-    public interface IAppointmentRepository
+    internal interface IAppointmentRepository
     {
         Task<Appointment?> GetByIdAsync(Guid id);
 
