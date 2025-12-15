@@ -4,7 +4,7 @@ using AppointmentAPI.Repositories;
 
 namespace AppointmentAPI.Services
 {
-    public class AppointmentIngestionService : IAppointmentIngestionService
+    internal class AppointmentIngestionService : IAppointmentIngestionService
     {
         private IAppointmentRepository _repository;
 
