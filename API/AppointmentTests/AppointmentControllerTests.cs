@@ -1,5 +1,6 @@
 ﻿using AppointmentAPI.Controllers;
 using AppointmentAPI.DTOs;
+using AppointmentAPI.Logging;
 using AppointmentAPI.Models;
 using AppointmentAPI.Properties;
 using AppointmentAPI.Repositories;
@@ -40,7 +41,8 @@ namespace AppointmentTests
                 DefaultServiceDurationMinutes = _defaultServiceDuration,
                 FutureAppointmentTimeThresholdMinutes = _futureAppointmentThreshold
             });
-            var ingestionService = new AppointmentIngestionService(_repository.Object, options);
+            var logger = new Mock<IApiLogger>();
+            var ingestionService = new AppointmentIngestionService(_repository.Object, options, logger.Object);
             _controller = new AppointmentController(ingestionService);
         }
 
@@ -141,10 +143,10 @@ namespace AppointmentTests
                     currentDate.Year,
                     currentDate.Month,
                     currentDate.Day,
-                    currentDate.Hour + 1,
+                    currentDate.Hour,
                     15,  
                     0,
-                    DateTimeKind.Utc),
+                    DateTimeKind.Utc) + TimeSpan.FromHours(1),
                 ClientName = "InvalidMinuteClient"
             };
 
@@ -165,16 +167,17 @@ namespace AppointmentTests
 
             var currentDate = DateTime.UtcNow;
 
+
             var dto = new AppointmentDTO
             {
                 AppointmentTime = new DateTime(
                     currentDate.Year,
                     currentDate.Month,
                     currentDate.Day,
-                    currentDate.Hour -1,
+                    currentDate.Hour,
                     15,
                     0,
-                    DateTimeKind.Utc),
+                    DateTimeKind.Utc) - TimeSpan.FromHours(1),
                 ClientName = "InvalidMinuteClient"
             };
 
@@ -285,10 +288,10 @@ namespace AppointmentTests
                     currentDate.Year,
                     currentDate.Month,
                     currentDate.Day,
-                    currentDate.Hour + 2,
+                    currentDate.Hour,
                     0,
                     0,
-                    DateTimeKind.Utc),
+                    DateTimeKind.Utc) + TimeSpan.FromHours(2),
                 ServiceDurationMinutes = 60,
                 ClientName = "ExistingClient"
             };
@@ -303,9 +306,9 @@ namespace AppointmentTests
                     existingAppointment.AppointmentTime.Month,
                     existingAppointment.AppointmentTime.Day,
                     existingAppointment.AppointmentTime.Hour,
-                    existingAppointment.AppointmentTime.Minute + 30,
+                    existingAppointment.AppointmentTime.Minute,
                     0,
-                    DateTimeKind.Utc),
+                    DateTimeKind.Utc) + TimeSpan.FromMinutes(30),
                 ClientName = "OverlappingClient",
                 ServiceDurationMinutes = 45
             };
@@ -329,10 +332,10 @@ namespace AppointmentTests
                     currentDate.Year,
                     currentDate.Month,
                     currentDate.Day,
-                    currentDate.Hour + 2,
+                    currentDate.Hour,
                     0,
                     0,
-                    DateTimeKind.Utc),
+                    DateTimeKind.Utc) + TimeSpan.FromHours(2),
                 ServiceDurationMinutes = 30,
                 ClientName = "ExistingClient"
             };
@@ -346,10 +349,10 @@ namespace AppointmentTests
                     existingAppointment.AppointmentTime.Year,
                     existingAppointment.AppointmentTime.Month,
                     existingAppointment.AppointmentTime.Day,
-                    existingAppointment.AppointmentTime.Hour - 1,
+                    existingAppointment.AppointmentTime.Hour,
                     45,
                     0,
-                    DateTimeKind.Utc),
+                    DateTimeKind.Utc) - TimeSpan.FromHours(1),
                 ClientName = "OverlappingClient",
                 ServiceDurationMinutes = 60
             };
@@ -373,10 +376,10 @@ namespace AppointmentTests
                     currentDate.Year,
                     currentDate.Month,
                     currentDate.Day,
-                    currentDate.Hour + 2,
+                    currentDate.Hour,
                     0,
                     0,
-                    DateTimeKind.Utc),
+                    DateTimeKind.Utc) + TimeSpan.FromHours(2),
                 ServiceDurationMinutes = 60,
                 ClientName = "ExistingClient"
             };
@@ -390,10 +393,10 @@ namespace AppointmentTests
                     existingAppointment.AppointmentTime.Year,
                     existingAppointment.AppointmentTime.Month,
                     existingAppointment.AppointmentTime.Day,
-                    existingAppointment.AppointmentTime.Hour - 1,
+                    existingAppointment.AppointmentTime.Hour,
                     30,
                     0,
-                    DateTimeKind.Utc),
+                    DateTimeKind.Utc) - TimeSpan.FromHours(1),
                 ClientName = "OverlappingClient",
                 ServiceDurationMinutes = 45
             };

@@ -1,5 +1,4 @@
-﻿using AppointmentAPI.Models;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace AppointmentAPI.DTOs
 {

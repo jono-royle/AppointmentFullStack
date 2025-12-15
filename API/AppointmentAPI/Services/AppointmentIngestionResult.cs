@@ -1,6 +1,4 @@
-﻿using AppointmentAPI.DTOs;
-
-namespace AppointmentAPI.Services
+﻿namespace AppointmentAPI.Services
 {
     public class AppointmentIngestionResult
     {
