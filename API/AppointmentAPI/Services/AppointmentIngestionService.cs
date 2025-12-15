@@ -88,7 +88,7 @@ namespace AppointmentAPI.Services
         private static Appointment? ValidateAppointment(AppointmentDTO appointment, out List<string> errors)
         {
             errors = new List<string>();
-            var utcAppointmentTime = appointment.AppointmentTime.UtcDateTime;
+            var utcAppointmentTime = appointment.AppointmentTime!.Value.UtcDateTime;
             if (utcAppointmentTime < DateTime.UtcNow + TimeSpan.FromMinutes(5))
             {
                 errors.Add("Appointment time must be in the future.");
