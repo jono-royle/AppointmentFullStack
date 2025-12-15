@@ -26,10 +26,8 @@ namespace AppointmentAPI.Repositories
 
         public async Task<Guid> SaveAsync(Appointment appointment)
         {
-            // Add the entity
             await _context.Appointments.AddAsync(appointment);
 
-            // Persist to the database
             await _context.SaveChangesAsync();
 
             return appointment.Id;

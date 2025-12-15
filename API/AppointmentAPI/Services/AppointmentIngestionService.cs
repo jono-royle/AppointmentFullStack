@@ -1,4 +1,5 @@
 ﻿using AppointmentAPI.DTOs;
+using AppointmentAPI.Logging;
 using AppointmentAPI.Models;
 using AppointmentAPI.Properties;
 using AppointmentAPI.Repositories;
@@ -10,11 +11,13 @@ namespace AppointmentAPI.Services
     {
         private IAppointmentRepository _repository;
         private readonly AppointmentIngestionOptions _options;
+        private IApiLogger _logger;
 
-        public AppointmentIngestionService(IAppointmentRepository repository, IOptions<AppointmentIngestionOptions> options)
+        public AppointmentIngestionService(IAppointmentRepository repository, IOptions<AppointmentIngestionOptions> options, IApiLogger logger)
         {
             _repository = repository;
             _options = options.Value;
+            _logger = logger;
         }
 
         public async Task<AppointmentDTO?> GetAppointmentFromId(Guid id)
@@ -22,7 +25,7 @@ namespace AppointmentAPI.Services
             var appointment = await _repository.GetByIdAsync(id);
             if (appointment == null)
             {
-                Console.WriteLine($"Error - appointment {id} not found");
+                _logger.Log($"Error - appointment {id} not found");
                 return null;
             }
 
@@ -54,7 +57,7 @@ namespace AppointmentAPI.Services
 
             if (appointment == null)
             {
-                Console.WriteLine($"Error - appointment not ingested due to {errors.Count} validation failures:");
+                _logger.Log($"Error - appointment not ingested due to {errors.Count} validation failures:");
                 return ReportErrors(errors);
             }
             else
@@ -62,7 +65,7 @@ namespace AppointmentAPI.Services
                 var exisitingAppointments = await _repository.GetAllAppointmentsAsync();
                 if (!CheckForAppointmentOverlaps(appointment, exisitingAppointments, out errors))
                 {
-                    Console.WriteLine($"Error - appointment not ingested due to appointment overlap");
+                    _logger.Log($"Error - appointment not ingested due to appointment overlap");
                     return ReportErrors(errors);
                 }
 
@@ -76,11 +79,11 @@ namespace AppointmentAPI.Services
             }
         }
 
-        private static AppointmentIngestionResult ReportErrors(List<string> errors)
+        private AppointmentIngestionResult ReportErrors(List<string> errors)
         {
             foreach (var error in errors)
             {
-                Console.WriteLine(error);
+                _logger.Log(error);
             }
             return new AppointmentIngestionResult
             {

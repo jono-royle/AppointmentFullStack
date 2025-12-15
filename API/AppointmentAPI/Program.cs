@@ -6,6 +6,7 @@ using System;
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using AppointmentAPI.Properties;
+using AppointmentAPI.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,6 +28,7 @@ builder.Services.AddSwaggerGen(options =>
     options.IncludeXmlComments(xmlPath);
 });
 builder.Services.AddScoped<IAppointmentIngestionService, AppointmentIngestionService>();
+builder.Services.AddScoped<IApiLogger, ConsoleLogger>();
 
 //Uncomment this line and comment out the two lines below to switch to an in memory dictionary
 //builder.Services.AddSingleton<IAppointmentRepository, DictionaryAppointmentRepository>();
