@@ -12,9 +12,9 @@ const App = () => {
 
   return (
     <div>
-      <h1>Appointments</h1>
-
-      <AppointmentForm onSubmit={createAppointment} />
+<div className="max-w-md mx-auto my-8">
+  <AppointmentForm onSubmit={createAppointment} />
+</div>
 
       {successMessage && <p style={{ color: "green" }}>{successMessage}</p>}
 
