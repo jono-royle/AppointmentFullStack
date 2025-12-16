@@ -15,4 +15,4 @@ Then, run the frontend react site with command 'npm run dev' and open the URL sh
 Tests - Navigate to AppointmentFullStack\API\AppointmentAPI and run command 'dotnet test'
 
 Time breakdown:
-Backend: 4h | Testing: 2h | Frontend: 2h | Documentation: 0.5h
+Backend: 4h | Testing: 2h | Frontend: 1.5h | Documentation: 0.5h
