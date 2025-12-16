@@ -109,7 +109,7 @@ namespace AppointmentAPI.Services
                 return null;
             }
 
-            if(appointment.ServiceDurationMinutes == null || appointment.ServiceDurationMinutes == 0)
+            if(appointment.ServiceDurationMinutes == null || appointment.ServiceDurationMinutes <= 0)
             {
                 appointment.ServiceDurationMinutes = defaultServiceDuration;
             }

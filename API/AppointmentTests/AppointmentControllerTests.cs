@@ -17,8 +17,8 @@ namespace AppointmentTests
     [TestClass]
     public sealed class AppointmentControllerTests
     {
-        private AppointmentController _controller;
-        private Mock<IAppointmentRepository> _repository;
+        private AppointmentController _controller = null!;
+        private Mock<IAppointmentRepository> _repository = null!;
         private static Guid _testAppointment1Id = Guid.NewGuid();
 
         private static int _defaultServiceDuration = 30;
@@ -105,6 +105,7 @@ namespace AppointmentTests
             var error = badRequest.Value as ErrorResponse;
             Assert.IsNotNull(error);
             Assert.IsTrue(error.Errors.Count == 1);
+            _repository.Verify(r => r.SaveAsync(It.IsAny<Appointment>()), Times.Never);
         }
 
         [TestMethod]
@@ -157,6 +158,36 @@ namespace AppointmentTests
             var error = badRequest.Value as ErrorResponse;
             Assert.IsNotNull(error);
             Assert.IsTrue(error.Errors.Count == 1);
+        }
+
+        [TestMethod]
+        public async Task IngestAppointment_ValidMinuteValue_ReturnsOkId()
+        {
+            _repository.Setup(r => r.GetAllAppointmentsAsync())
+                .ReturnsAsync(new List<Appointment>());
+
+            var currentDate = DateTime.UtcNow;
+
+            var dto = new AppointmentDTO
+            {
+                AppointmentTime = new DateTime(
+                    currentDate.Year,
+                    currentDate.Month,
+                    currentDate.Day,
+                    currentDate.Hour,
+                    30,
+                    0,
+                    DateTimeKind.Utc) + TimeSpan.FromHours(1),
+                ClientName = "InvalidMinuteClient"
+            };
+
+            var result = await _controller.Ingest(dto);
+
+            var okResult = result as OkObjectResult;
+            Assert.IsNotNull(okResult);
+            var success = okResult.Value as SuccessfulIngestionResponse;
+            Assert.IsNotNull(success);
+            Assert.IsNotNull(success.AppointmentId);
         }
 
         [TestMethod]
@@ -244,37 +275,147 @@ namespace AppointmentTests
         }
 
         [TestMethod]
+        public async Task IngestAppointment_0Duration_SetsDefault()
+        {
+            Appointment? savedAppointment = null;
+
+            _repository
+                .Setup(r => r.GetAllAppointmentsAsync())
+                .ReturnsAsync(new List<Appointment>());
+
+            _repository
+                .Setup(r => r.SaveAsync(It.IsAny<Appointment>()))
+                .Callback<Appointment>(a => savedAppointment = a)
+                .ReturnsAsync(Guid.NewGuid());
+
+            var currentDate = DateTime.UtcNow;
+
+            var dto = new AppointmentDTO
+            {
+                AppointmentTime = new DateTime(currentDate.Year, currentDate.Month, currentDate.Day, currentDate.Hour, 0, 0,
+                    DateTimeKind.Utc) + TimeSpan.FromHours(2),
+                ClientName = "DefaultDurationClient",
+                ServiceDurationMinutes = 0
+            };
+
+            var result = await _controller.Ingest(dto);
+
+            var okResult = result as OkObjectResult;
+            Assert.IsNotNull(okResult);
+
+            Assert.IsNotNull(savedAppointment);
+
+            Assert.AreEqual(_defaultServiceDuration, savedAppointment!.ServiceDurationMinutes);
+        }
+
+        [TestMethod]
+        public async Task IngestAppointment_NegativeDuration_SetsDefault()
+        {
+            Appointment? savedAppointment = null;
+
+            _repository
+                .Setup(r => r.GetAllAppointmentsAsync())
+                .ReturnsAsync(new List<Appointment>());
+
+            _repository
+                .Setup(r => r.SaveAsync(It.IsAny<Appointment>()))
+                .Callback<Appointment>(a => savedAppointment = a)
+                .ReturnsAsync(Guid.NewGuid());
+
+            var currentDate = DateTime.UtcNow;
+
+            var dto = new AppointmentDTO
+            {
+                AppointmentTime = new DateTime(currentDate.Year, currentDate.Month, currentDate.Day, currentDate.Hour, 0, 0,
+                    DateTimeKind.Utc) + TimeSpan.FromHours(2),
+                ClientName = "DefaultDurationClient",
+                ServiceDurationMinutes = -1
+            };
+
+            var result = await _controller.Ingest(dto);
+
+            var okResult = result as OkObjectResult;
+            Assert.IsNotNull(okResult);
+
+            Assert.IsNotNull(savedAppointment);
+
+            Assert.AreEqual(_defaultServiceDuration, savedAppointment!.ServiceDurationMinutes);
+        }
+
+        [TestMethod]
+        public async Task IngestAppointment_LocalDateTime_SetsUTCDateTime()
+        {
+            Appointment? savedAppointment = null;
+
+            _repository
+                .Setup(r => r.GetAllAppointmentsAsync())
+                .ReturnsAsync(new List<Appointment>());
+
+            _repository
+                .Setup(r => r.SaveAsync(It.IsAny<Appointment>()))
+                .Callback<Appointment>(a => savedAppointment = a)
+                .ReturnsAsync(Guid.NewGuid());
+
+            var currentDate = DateTime.Now;
+
+            var dto = new AppointmentDTO
+            {
+                AppointmentTime = new DateTime(currentDate.Year, currentDate.Month, currentDate.Day, currentDate.Hour, 0, 0,
+                    DateTimeKind.Local) + TimeSpan.FromHours(2),
+                ClientName = "DefaultDurationClient",
+                ServiceDurationMinutes = null
+            };
+
+            var result = await _controller.Ingest(dto);
+
+            var okResult = result as OkObjectResult;
+            Assert.IsNotNull(okResult);
+
+            Assert.IsNotNull(savedAppointment);
+
+            Assert.AreEqual(DateTimeKind.Utc, savedAppointment!.AppointmentTime.Kind);
+        }
+
+        [TestMethod]
         public void AppointmentDTO_ClientNameIsRequired()
         {
-            // Arrange
             var dto = new AppointmentDTO
             {
                 AppointmentTime = DateTime.UtcNow.AddHours(1),
                 ClientName = null!
             };
 
-            // Act
             var results = ValidateModel(dto);
 
-            // Assert
             Assert.IsTrue(results.Any(r => r.MemberNames.Contains(nameof(AppointmentDTO.ClientName))));
         }
 
         [TestMethod]
         public void AppointmentDTO_AppointmentTimeIsRequired()
         {
-            // Arrange
             var dto = new AppointmentDTO
             {
                 ClientName = "Test Client",
                 AppointmentTime = null
             };
 
-            // Act
             var results = ValidateModel(dto);
 
-            // Assert
             Assert.IsTrue(results.Any(r => r.MemberNames.Contains(nameof(AppointmentDTO.AppointmentTime))));
+        }
+
+        [TestMethod]
+        public void AppointmentDTO_ServiceDurationIsNotRequired()
+        {
+            var dto = new AppointmentDTO
+            {
+                ClientName = "Test Client",
+                AppointmentTime = DateTime.UtcNow
+            };
+
+            var results = ValidateModel(dto);
+
+            Assert.IsFalse(results.Any(r => r.MemberNames.Contains(nameof(AppointmentDTO.ServiceDurationMinutes))));
         }
 
         [TestMethod]
