@@ -10,8 +10,11 @@ Unit tests that validate individual components in isolation are the highest prio
 
 # Trade-offs and Omissions
 I did want to focus on the backend logic for this implementation (including adding basic logic for preventing overlapping appointments, which was not explicitly requested but seemed like a natural extension of the business logic). This lead to some trade offs, for example:
+
 Logging - I just used some basic, undetailed console logging. However, I did wrap this in an abstract implementation so that it could be easily swapped out for something more detailed.
+
 Domain model design - I have only designed the bare minimum domain model, as opposed to future proofing with likely to be needed attributes such as the ID of staff assigned to the appointment and an appointment status.
+
 One trade off in particular is the lack of any authentication or authorisation . When designing quickly in an agile team, this is a good option to leave for later as it could slow down early prototyping with complexity, but is not too difficult to add in later.
 
 # Deployment
