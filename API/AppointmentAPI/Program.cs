@@ -7,6 +7,8 @@ using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using AppointmentAPI.Properties;
 using AppointmentAPI.Logging;
+using AppointmentAPI.Responses;
+using Microsoft.AspNetCore.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,7 +30,7 @@ builder.Services.AddSwaggerGen(options =>
     options.IncludeXmlComments(xmlPath);
 });
 builder.Services.AddScoped<IAppointmentIngestionService, AppointmentIngestionService>();
-builder.Services.AddScoped<IApiLogger, ConsoleLogger>();
+builder.Services.AddSingleton<IApiLogger, ConsoleLogger>();
 
 //Uncomment this line and comment out the two lines below to switch to an in memory dictionary
 //builder.Services.AddSingleton<IAppointmentRepository, DictionaryAppointmentRepository>();
@@ -56,5 +58,29 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        var exceptionHandler = context.Features.Get<IExceptionHandlerFeature>();
+
+        var exception = exceptionHandler?.Error;
+
+        var logger = context.RequestServices.GetRequiredService<IApiLogger>();
+
+        logger.Log($"Unhandled exception occurred: {exception}");
+
+        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        context.Response.ContentType = "application/json";
+
+        var response = new ErrorResponse
+        {
+            Errors = new List<string> { "An unexpected error occurred." }
+        };
+
+        await context.Response.WriteAsJsonAsync(response);
+    });
+});
 
 app.Run();
